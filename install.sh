@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ======= CONFIG =======
 RAW_BASE_DEFAULT="https://raw.githubusercontent.com/ShadowHedgehog76/BashUtils/main"
 RAW_BASE="${RAW_BASE:-$RAW_BASE_DEFAULT}"
 
@@ -9,82 +8,79 @@ INSTALL_DIR="$HOME/.alias"
 SEARCH_CMD="$INSTALL_DIR/search.sh"
 UPDATE_CMD="$INSTALL_DIR/update.sh"
 
-OS="$(uname -s || true)"
-
 echo "🔧 Installation de BashUtils dans $INSTALL_DIR ..."
-
-# ======= 1) Créer le dossier cible =======
 mkdir -p "$INSTALL_DIR"
 
-# ======= 2) Télécharger search.sh et update.sh =======
-echo "⬇️  Téléchargement de search.sh ..."
+# 1) Télécharger les scripts
+echo "⬇️  search.sh"
 curl -fsSL "$RAW_BASE/search.sh" -o "$SEARCH_CMD"
 chmod +x "$SEARCH_CMD"
 
-echo "⬇️  Téléchargement de update.sh ..."
+echo "⬇️  update.sh"
 if curl -fsSL "$RAW_BASE/update.sh" -o "$UPDATE_CMD"; then
   chmod +x "$UPDATE_CMD"
 else
-  echo "ℹ️  Pas de update.sh trouvé sur le repo."
+  # facultatif: bootstrap minimal si pas présent sur le repo
+  cat > "$UPDATE_CMD" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+RAW_BASE="${RAW_BASE:-https://raw.githubusercontent.com/ShadowHedgehog76/BashUtils/main}"
+INSTALL_DIR="$HOME/.alias"
+mkdir -p "$INSTALL_DIR"
+for f in search.sh update.sh; do
+  curl -fsSL "$RAW_BASE/$f" -o "$INSTALL_DIR/$f" && chmod +x "$INSTALL_DIR/$f" || true
+done
+echo "✅ Update terminé"
+EOF
+  chmod +x "$UPDATE_CMD"
 fi
 
-# ======= 3) Ajouter ~/.alias dans le PATH si besoin =======
+# 2) Préparer lignes à ajouter
+ADD_PATH='export PATH="$HOME/.alias:$PATH"'
+ADD_ALIAS_SEARCH='alias search="bash ~/.alias/search.sh"'
+ADD_ALIAS_UPDATE='alias update="bash ~/.alias/update.sh"'
+
+# 3) Injecter dans ~/.bashrc et ~/.zshrc si absent
 for SHELLRC in "$HOME/.bashrc" "$HOME/.zshrc"; do
-  if [ -f "$SHELLRC" ]; then
-    if ! grep -q 'export PATH="$HOME/.alias:$PATH"' "$SHELLRC" 2>/dev/null; then
-      echo 'export PATH="$HOME/.alias:$PATH"' >> "$SHELLRC"
-      echo "✅ Ajout de ~/.alias au PATH dans $SHELLRC"
-    fi
-    if ! grep -q 'alias search=' "$SHELLRC" 2>/dev/null; then
-      echo 'alias search="bash ~/.alias/search.sh"' >> "$SHELLRC"
-      echo "✅ Ajout alias search dans $SHELLRC"
-    fi
-    if ! grep -q 'alias update=' "$SHELLRC" 2>/dev/null; then
-      echo 'alias update="bash ~/.alias/update.sh"' >> "$SHELLRC"
-      echo "✅ Ajout alias update dans $SHELLRC"
-    fi
-  fi
+  touch "$SHELLRC"
+  grep -qF "$ADD_PATH"        "$SHELLRC" || echo "$ADD_PATH" >> "$SHELLRC"
+  grep -qF "$ADD_ALIAS_SEARCH" "$SHELLRC" || echo "$ADD_ALIAS_SEARCH" >> "$SHELLRC"
+  grep -qF "$ADD_ALIAS_UPDATE" "$SHELLRC" || echo "$ADD_ALIAS_UPDATE" >> "$SHELLRC"
 done
 
-# ======= 4) Auto-update au démarrage =======
-case "$OS" in
-  Linux)
-    CRON_LINE="@reboot bash ~/.alias/update.sh >/dev/null 2>&1"
-    (crontab -l 2>/dev/null | grep -v -F "$CRON_LINE" || true; echo "$CRON_LINE") | crontab -
-    echo "✅ Auto-update activé au démarrage (crontab @reboot)"
+# 4) Script d’activation à sourcer rapidement
+ACTIVATE="$INSTALL_DIR/activate.sh"
+cat > "$ACTIVATE" <<EOF
+# Recharge rapides des alias/chemins pour bash et zsh
+$ADD_PATH
+$ADD_ALIAS_SEARCH
+$ADD_ALIAS_UPDATE
+EOF
+
+# 5) Détection du shell courant pour l’instruction finale
+CURRENT_SHELL="$(ps -p $$ -o comm= 2>/dev/null || echo "")"
+RELOAD_HINT=""
+case "$CURRENT_SHELL" in
+  *zsh*)
+    RELOAD_HINT='source ~/.zshrc'
     ;;
-  Darwin)
-    LA_DIR="$HOME/Library/LaunchAgents"
-    LA_PLIST="$LA_DIR/com.$USER.bashutils.update.plist"
-    mkdir -p "$LA_DIR"
-    cat > "$LA_PLIST" <<EOF2
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN"
- "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
- <dict>
-   <key>Label</key>
-   <string>com.$USER.bashutils.update</string>
-   <key>ProgramArguments</key>
-   <array><string>bash</string><string>$UPDATE_CMD</string></array>
-   <key>RunAtLoad</key><true/>
-   <key>StandardOutPath</key><string>$HOME/Library/Logs/bashutils-update.out.log</string>
-   <key>StandardErrorPath</key><string>$HOME/Library/Logs/bashutils-update.err.log</string>
- </dict>
-</plist>
-EOF2
-    launchctl unload "$LA_PLIST" >/dev/null 2>&1 || true
-    launchctl load -w "$LA_PLIST"
-    echo "✅ Auto-update activé au démarrage (launchd)"
+  *bash*)
+    RELOAD_HINT='source ~/.bashrc'
     ;;
   *)
-    echo "ℹ️  OS non reconnu ($OS). Ajoute manuellement au démarrage si besoin."
+    # inconnu : proposer les deux + activate
+    RELOAD_HINT='source ~/.bashrc  # ou  source ~/.zshrc'
     ;;
 esac
 
-echo "🎉 Installation terminée."
-echo "➡️  Ouvre un nouveau terminal OU exécute: source ~/.bashrc et source ~/.zshrc"
 echo
-echo "✅ Commandes prêtes :"
-echo "   search \"mot\" [chemin]"
+echo "🎉 Installation terminée."
+echo "ℹ️ Limitation Unix : un script lancé via 'curl | bash' ne peut pas modifier TON shell en cours."
+echo "➡️ Pour activer tout de suite dans ce terminal, exécute :"
+echo "   $RELOAD_HINT"
+echo "   # ou :"
+echo "   source ~/.alias/activate.sh"
+echo
+echo "✅ Tu peux ensuite utiliser :"
+echo '   search "hello" ~/Documents'
 echo "   update"
