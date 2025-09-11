@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-RAW_BASE="${RAW_BASE:-https://raw.githubusercontent.com/ShadowHedgehog76/BashUtils/main}"
+# Chemin d'installation (le même que dans install.sh)
 INSTALL_DIR="$HOME/Documents/alias"
+
+# Repo source
+RAW_BASE="${RAW_BASE:-https://raw.githubusercontent.com/ShadowHedgehog76/BashUtils/main}"
 
 echo "⬇️ Mise à jour des scripts depuis $RAW_BASE ..."
 mkdir -p "$INSTALL_DIR"
 
-# Liste des fichiers à mettre à jour (ajoute ici tous tes .sh si tu en crées d'autres)
+# Liste des scripts à mettre à jour (ajoute ici si tu en crées d’autres)
 FILES=(
   "search.sh"
   "update.sh"
