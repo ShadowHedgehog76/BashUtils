@@ -2,7 +2,7 @@
 set -euo pipefail
 
 RAW_BASE="${RAW_BASE:-https://raw.githubusercontent.com/ShadowHedgehog76/BashUtils/main}"
-INSTALL_DIR="$HOME/.alias"
+INSTALL_DIR="$HOME/Documents/alias"
 
 echo "⬇️ Mise à jour des scripts depuis $RAW_BASE ..."
 mkdir -p "$INSTALL_DIR"
