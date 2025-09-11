@@ -4,7 +4,7 @@ set -euo pipefail
 RAW_BASE_DEFAULT="https://raw.githubusercontent.com/ShadowHedgehog76/BashUtils/main"
 RAW_BASE="${RAW_BASE:-$RAW_BASE_DEFAULT}"
 
-INSTALL_DIR="$HOME/.alias"
+INSTALL_DIR="$HOME/Documents/alias"
 SEARCH_CMD="$INSTALL_DIR/search.sh"
 UPDATE_CMD="$INSTALL_DIR/update.sh"
 
@@ -25,7 +25,7 @@ else
 #!/usr/bin/env bash
 set -euo pipefail
 RAW_BASE="${RAW_BASE:-https://raw.githubusercontent.com/ShadowHedgehog76/BashUtils/main}"
-INSTALL_DIR="$HOME/.alias"
+INSTALL_DIR="$HOME/Documents/alias"
 mkdir -p "$INSTALL_DIR"
 for f in search.sh update.sh; do
   curl -fsSL "$RAW_BASE/$f" -o "$INSTALL_DIR/$f" && chmod +x "$INSTALL_DIR/$f" || true
@@ -36,9 +36,9 @@ EOF
 fi
 
 # 2) Préparer lignes à ajouter
-ADD_PATH='export PATH="$HOME/.alias:$PATH"'
-ADD_ALIAS_SEARCH='alias search="bash ~/.alias/search.sh"'
-ADD_ALIAS_UPDATE='alias update="bash ~/.alias/update.sh"'
+ADD_PATH='export PATH="$HOME/Documents/alias:$PATH"'
+ADD_ALIAS_SEARCH='alias search="bash ~/Documents/alias/search.sh"'
+ADD_ALIAS_UPDATE='alias update="bash ~/Documents/alias/update.sh"'
 
 # 3) Injecter dans ~/.bashrc et ~/.zshrc si absent
 for SHELLRC in "$HOME/.bashrc" "$HOME/.zshrc"; do
@@ -79,7 +79,7 @@ echo "ℹ️ Limitation Unix : un script lancé via 'curl | bash' ne peut pas mo
 echo "➡️ Pour activer tout de suite dans ce terminal, exécute :"
 echo "   $RELOAD_HINT"
 echo "   # ou :"
-echo "   source ~/.alias/activate.sh"
+echo "   source ~/Documents/alias/activate.sh"
 echo
 echo "✅ Tu peux ensuite utiliser :"
 echo '   search "hello" ~/Documents'
