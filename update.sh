@@ -1,68 +1,4 @@
 #!/usr/bin/env bash
-set -euo pipefail
-
-
-# ========= Robust defaults =========
-HOME="${HOME:-$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)}"
-: "${HOME:?HOME not set}"
-
-
-OWNER="${OWNER:-ShadowHedgehog76}"
-REPO="${REPO:-BashUtils}"
-BRANCH="${BRANCH:-main}"
-INSTALL_DIR_DEFAULT="$HOME/Documents/alias"
-INSTALL_DIR="${INSTALL_DIR:-$INSTALL_DIR_DEFAULT}"
-if [[ -z "$INSTALL_DIR" ]]; then INSTALL_DIR="$INSTALL_DIR_DEFAULT"; fi
-
-
-TARBALL_URL="https://codeload.github.com/${OWNER}/${REPO}/tar.gz/refs/heads/${BRANCH}"
-
-
-BLOCK_START="# >>> BashUtils aliases (managed) >>>"
-BLOCK_END="# <<< BashUtils aliases (managed) <<<"
-ACTIVATE="$INSTALL_DIR/activate.sh"
-
-
-# ========= Helpers =========
-build_alias_lines() {
-printf 'export PATH="%s/Documents/alias:$PATH"
-' "$HOME"
-while IFS= read -r -d '' f; do
-base="$(basename "$f")"
-name="${base%.sh}"
-printf 'alias %s="bash %s/%s"
-' "$name" "$INSTALL_DIR" "$base"
-done < <(find "$INSTALL_DIR" -maxdepth 1 -type f -name '*.sh' -print0 | sort -z)
-}
-
-
-build_alias_block() {
-echo "$BLOCK_START"
-build_alias_lines
-echo "$BLOCK_END"
-}
-
-
-update_rc_file() {
-local rc="$1"
-mkdir -p "$(dirname "$rc")" || true
-touch "$rc"
-local tmp
-tmp="$(mktemp)"
-awk -v s="$BLOCK_START" -v e="$BLOCK_END" '
-BEGIN{in=0}
-$0==s{in=1; next}
-$0==e{in=0; next}
-!in{print}
-' "$rc" > "$tmp"
-mv "$tmp" "$rc"
-build_alias_block >> "$rc"
-}
-
-
-# ========= Begin =========
-echo "⬇️ Mise à jour depuis ${OWNER}/${REPO}@${BRANCH} ..."
-mkdir -p "$INSTALL_DIR"
 
 
 TMPDIR="$(mktemp -d)"
@@ -85,4 +21,64 @@ fi
 
 
 # Extract
+echo "→ Extraction ..."
+mkdir -p "$TMPDIR/extracted"
+tar -xzf "$TARBALL" -C "$TMPDIR/extracted"
+ROOT_DIR="$(find "$TMPDIR/extracted" -maxdepth 1 -mindepth 1 -type d | head -n1)"
+
+
+# Sync everything except README* and VCS/CI metadata
+echo "→ Synchronisation vers $INSTALL_DIR ..."
+if command -v rsync >/dev/null 2>&1; then
+rsync -a --delete \
+--exclude='README' --exclude='README.*' --exclude='readme' --exclude='readme.*' \
+--exclude='.git/' --exclude='.github/' --exclude='.gitignore' \
+"$ROOT_DIR"/ "$INSTALL_DIR"/
+else
+(
+cd "$ROOT_DIR"
+while IFS= read -r -d '' path; do
+rel="${path#./}"
+dir="$(dirname "$rel")"
+mkdir -p "$INSTALL_DIR/$dir"
+cp -f "$rel" "$INSTALL_DIR/$rel"
+done < <(find . \
+-path './.git*' -prune -o \
+-path './.github*' -prune -o \
+-iname 'README*' -prune -o \
+-type f -print0)
+)
+fi
+
+
+# Ensure all .sh are executable
+echo "→ Mise en exécutable des scripts .sh ..."
+find "$INSTALL_DIR" -type f -name '*.sh' -exec chmod +x {} +
+
+
+# Rebuild aliases and inject into rc files
+echo "→ Mise à jour des alias dans ~/.bashrc et ~/.zshrc ..."
+update_rc_file "$HOME/.bashrc"
+update_rc_file "$HOME/.zshrc"
+
+
+# Regenerate activate.sh to match (no markers)
+{
+echo "# Recharge rapide des alias/chemins pour bash et zsh"
+build_alias_lines
+} > "$ACTIVATE"
+
+
+# Hint for reloading current shell
+# Pre-set a safe default to avoid set -u "unbound variable"
+RELOAD_HINT='source ~/.bashrc # ou source ~/.zshrc'
+CURRENT_SHELL="$(ps -p $$ -o comm= 2>/dev/null || echo "")"
+case "$CURRENT_SHELL" in
+*zsh*) RELOAD_HINT='source ~/.zshrc' ;;
+*bash*) RELOAD_HINT='source ~/.bashrc' ;;
+*) : ;; # keep default
+esac
+
+
+echo "🎉 Mise à jour terminée dans $INSTALL_DIR"
 echo "➡️ Pour recharger vos alias maintenant : $RELOAD_HINT"
