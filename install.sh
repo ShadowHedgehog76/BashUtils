@@ -1,37 +1,4 @@
 #!/usr/bin/env bash
-set -euo pipefail
-
-
-# === Config ===
-OWNER="${OWNER:-ShadowHedgehog76}"
-REPO="${REPO:-BashUtils}"
-BRANCH="${BRANCH:-main}"
-TARBALL_URL="https://codeload.github.com/${OWNER}/${REPO}/tar.gz/refs/heads/${BRANCH}"
-INSTALL_DIR="${INSTALL_DIR:-$HOME/Documents/alias}"
-
-
-# Paths / files
-ACTIVATE="$INSTALL_DIR/activate.sh"
-
-
-echo "🔧 Installation de ${OWNER}/${REPO} (branche ${BRANCH}) dans $INSTALL_DIR ..."
-mkdir -p "$INSTALL_DIR"
-
-
-TMPDIR="$(mktemp -d)"
-TARBALL="$TMPDIR/repo.tar.gz"
-
-
-echo "⬇️ Téléchargement du dépôt complet (tarball) ..."
-if ! curl -fsSL "$TARBALL_URL" -o "$TARBALL"; then
-echo "⚠️ Échec du téléchargement : $TARBALL_URL" >&2
-exit 1
-fi
-
-
-echo "📦 Extraction ..."
-mkdir -p "$TMPDIR/extracted"
-tar -xzf "$TARBALL" -C "$TMPDIR/extracted"
 ROOT_DIR="$(find "$TMPDIR/extracted" -maxdepth 1 -mindepth 1 -type d | head -n1)"
 
 
@@ -82,4 +49,37 @@ done
 
 # Create activate.sh to quickly source the env
 {
+echo "# Recharge rapide des alias/chemins pour bash et zsh"
+echo "$ADD_PATH"
+for L in "${ALIAS_FILE_LINES[@]}"; do echo "$L"; done
+} > "$ACTIVATE"
+
+
+# Hint for reloading current shell
+CURRENT_SHELL="$(ps -p $$ -o comm= 2>/dev/null || echo "")"
+case "$CURRENT_SHELL" in
+*zsh*) RELOAD_HINT='source ~/.zshrc' ;;
+*bash*) RELOAD_HINT='source ~/.bashrc' ;;
+*) RELOAD_HINT='source ~/.bashrc # ou source ~/.zshrc' ;;
+esac
+
+
+cat <<EOF
+
+
+🎉 Installation terminée dans $INSTALL_DIR.
+ℹ️ Limitation Unix : un script lancé via 'curl | bash' ne peut pas modifier le shell en cours.
+➡️ Pour activer immédiatement dans ce terminal, exécute :
+$RELOAD_HINT
+# ou :
+source "$ACTIVATE"
+
+
+✅ Exemples :
+search "hello" ~/Documents
+update
+EOF
+
+
+# Cleanup
 rm -rf "$TMPDIR"
