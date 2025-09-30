@@ -1,90 +1,54 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-
-# ========= Robust defaults =========
-HOME="${HOME:-$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)}"
-: "${HOME:?HOME not set}"
-
-
+# === Config ===
+# Where scripts will live
+INSTALL_DIR="${INSTALL_DIR:-$HOME/Documents/alias}"
+# Repo coordinates (override with env vars if you need another branch/fork)
 OWNER="${OWNER:-ShadowHedgehog76}"
 REPO="${REPO:-BashUtils}"
 BRANCH="${BRANCH:-main}"
-INSTALL_DIR_DEFAULT="$HOME/Documents/alias"
-INSTALL_DIR="${INSTALL_DIR:-$INSTALL_DIR_DEFAULT}"
-if [[ -z "$INSTALL_DIR" ]]; then INSTALL_DIR="$INSTALL_DIR_DEFAULT"; fi
-
-
 TARBALL_URL="https://codeload.github.com/${OWNER}/${REPO}/tar.gz/refs/heads/${BRANCH}"
 
-
-BLOCK_START="# >>> BashUtils aliases (managed) >>>"
-BLOCK_END="# <<< BashUtils aliases (managed) <<<"
-ACTIVATE="$INSTALL_DIR/activate.sh"
-
-
-# ========= Helpers =========
-build_alias_lines() {
-printf 'export PATH="%s/Documents/alias:$PATH"
-' "$HOME"
-while IFS= read -r -d '' f; do
-base="$(basename "$f")"
-name="${base%.sh}"
-printf 'alias %s="bash %s/%s"
-' "$name" "$INSTALL_DIR" "$base"
-done < <(find "$INSTALL_DIR" -maxdepth 1 -type f -name '*.sh' -print0 | sort -z)
-}
-
-
-build_alias_block() {
-echo "$BLOCK_START"
-build_alias_lines
-echo "$BLOCK_END"
-}
-
-
-update_rc_file() {
-local rc="$1"
-mkdir -p "$(dirname "$rc")" || true
-touch "$rc"
-local tmp
-tmp="$(mktemp)"
-awk -v s="$BLOCK_START" -v e="$BLOCK_END" '
-BEGIN{in=0}
-$0==s{in=1; next}
-$0==e{in=0; next}
-!in{print}
-' "$rc" > "$tmp"
-mv "$tmp" "$rc"
-build_alias_block >> "$rc"
-}
-
-
-# ========= Begin =========
+# Messages
 echo "⬇️ Mise à jour depuis ${OWNER}/${REPO}@${BRANCH} ..."
 mkdir -p "$INSTALL_DIR"
-
-
 TMPDIR="$(mktemp -d)"
-trap 'rm -rf "$TMPDIR"' EXIT
 TARBALL="$TMPDIR/repo.tar.gz"
 
-
-if [[ -z "$TARBALL_URL" ]]; then
-echo "⚠️ URL du tarball vide — vérifie OWNER/REPO/BRANCH" >&2
-exit 1
-fi
-
-
 # Download tarball
-echo "→ Téléchargement du tarball ..."
 if ! curl -fsSL "$TARBALL_URL" -o "$TARBALL"; then
-echo "⚠️ Impossible de récupérer le tarball : $TARBALL_URL" >&2
-exit 1
+  echo "⚠️ Impossible de récupérer le tarball : $TARBALL_URL" >&2
+  exit 1
 fi
-
 
 # Extract
-echo "→ Extraction ..."
 mkdir -p "$TMPDIR/extracted"
-echo "➡️ Pour recharger vos alias maintenant : $RELOAD_HINT"
+tar -xzf "$TARBALL" -C "$TMPDIR/extracted"
+ROOT_DIR="$(find "$TMPDIR/extracted" -maxdepth 1 -mindepth 1 -type d | head -n1)"
+
+# Sync everything except README files (case-insensitive) and VCS/CI metadata
+# If rsync exists, use it for robust syncing; otherwise fall back to find/cp.
+if command -v rsync >/dev/null 2>&1; then
+  rsync -a --delete \
+    --exclude='README' --exclude='README.*' --exclude='readme' --exclude='readme.*' \
+    --exclude='.git/' --exclude='.github/' --exclude='.gitignore' \
+    "$ROOT_DIR"/ "$INSTALL_DIR"/
+else
+  # Manual copy excluding README* and VCS files
+  ( cd "$ROOT_DIR" && \
+    find . \
+      -path './.git*' -prune -o \
+      -path './.github*' -prune -o \
+      -iname 'README*' -prune -o \
+      -type f -print0 | \
+    xargs -0 -I{} sh -c 'mkdir -p "${0%/*}"; cp -f "${1}" "$INSTALL_DIR/${0#./}"' '{}' '{}' )
+fi
+
+# Ensure all .sh are executable
+find "$INSTALL_DIR" -maxdepth 1 -type f -name '*.sh' -exec chmod +x {} +
+
+echo "🎉 Mise à jour terminée dans $INSTALL_DIR"
+
+# Cleanup
+rm -rf "$TMPDIR"
