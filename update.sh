@@ -3,8 +3,7 @@ set -euo pipefail
 
 
 # ========= Robust defaults =========
-# Ensure HOME is set
-HOME="${HOME:-$(getent passwd $(id -u) | cut -d: -f6)}"
+HOME="${HOME:-$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)}"
 : "${HOME:?HOME not set}"
 
 
@@ -13,7 +12,7 @@ REPO="${REPO:-BashUtils}"
 BRANCH="${BRANCH:-main}"
 INSTALL_DIR_DEFAULT="$HOME/Documents/alias"
 INSTALL_DIR="${INSTALL_DIR:-$INSTALL_DIR_DEFAULT}"
-[[ -z "$INSTALL_DIR" ]] && INSTALL_DIR="$INSTALL_DIR_DEFAULT"
+if [[ -z "$INSTALL_DIR" ]]; then INSTALL_DIR="$INSTALL_DIR_DEFAULT"; fi
 
 
 TARBALL_URL="https://codeload.github.com/${OWNER}/${REPO}/tar.gz/refs/heads/${BRANCH}"
@@ -25,25 +24,22 @@ ACTIVATE="$INSTALL_DIR/activate.sh"
 
 
 # ========= Helpers =========
-build_alias_block() {
-local add_path='export PATH="$HOME/Documents/alias:$PATH"'
-local lines=()
+build_alias_lines() {
+printf 'export PATH="%s/Documents/alias:$PATH"
+' "$HOME"
 while IFS= read -r -d '' f; do
-local base name
 base="$(basename "$f")"
 name="${base%.sh}"
-lines+=("alias ${name}=\"bash $INSTALL_DIR/${base}\"")
+printf 'alias %s="bash %s/%s"
+' "$name" "$INSTALL_DIR" "$base"
 done < <(find "$INSTALL_DIR" -maxdepth 1 -type f -name '*.sh' -print0 | sort -z)
+}
 
 
-printf "%s
-" "$BLOCK_START"
-printf "%s
-" "$add_path"
-for L in "${lines[@]}"; do printf "%s
-" "$L"; done
-printf "%s
-" "$BLOCK_END"
+build_alias_block() {
+echo "$BLOCK_START"
+build_alias_lines
+echo "$BLOCK_END"
 }
 
 
@@ -51,7 +47,8 @@ update_rc_file() {
 local rc="$1"
 mkdir -p "$(dirname "$rc")" || true
 touch "$rc"
-local tmp; tmp="$(mktemp)"
+local tmp
+tmp="$(mktemp)"
 awk -v s="$BLOCK_START" -v e="$BLOCK_END" '
 BEGIN{in=0}
 $0==s{in=1; next}
@@ -74,4 +71,18 @@ TARBALL="$TMPDIR/repo.tar.gz"
 
 
 if [[ -z "$TARBALL_URL" ]]; then
+echo "⚠️ URL du tarball vide — vérifie OWNER/REPO/BRANCH" >&2
+exit 1
+fi
+
+
+# Download tarball
+echo "→ Téléchargement du tarball ..."
+if ! curl -fsSL "$TARBALL_URL" -o "$TARBALL"; then
+echo "⚠️ Impossible de récupérer le tarball : $TARBALL_URL" >&2
+exit 1
+fi
+
+
+# Extract
 echo "➡️ Pour recharger vos alias maintenant : $RELOAD_HINT"
