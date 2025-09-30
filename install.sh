@@ -1,4 +1,18 @@
 #!/usr/bin/env bash
+TMPDIR="$(mktemp -d)"
+TARBALL="$TMPDIR/repo.tar.gz"
+
+
+echo "⬇️ Téléchargement du dépôt complet (tarball) ..."
+if ! curl -fsSL "$TARBALL_URL" -o "$TARBALL"; then
+echo "⚠️ Échec du téléchargement : $TARBALL_URL" >&2
+exit 1
+fi
+
+
+echo "📦 Extraction ..."
+mkdir -p "$TMPDIR/extracted"
+tar -xzf "$TARBALL" -C "$TMPDIR/extracted"
 ROOT_DIR="$(find "$TMPDIR/extracted" -maxdepth 1 -mindepth 1 -type d | head -n1)"
 
 
