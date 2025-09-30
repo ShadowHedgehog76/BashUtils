@@ -1,29 +1,62 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Chemin d'installation (le même que dans install.sh)
-INSTALL_DIR="$HOME/Documents/alias"
 
-# Repo source
-RAW_BASE="${RAW_BASE:-https://raw.githubusercontent.com/ShadowHedgehog76/BashUtils/main}"
+# === Config ===
+# Where scripts will live
+INSTALL_DIR="${INSTALL_DIR:-$HOME/Documents/alias}"
+# Repo coordinates (override with env vars if you need another branch/fork)
+OWNER="${OWNER:-ShadowHedgehog76}"
+REPO="${REPO:-BashUtils}"
+BRANCH="${BRANCH:-main}"
+TARBALL_URL="https://codeload.github.com/${OWNER}/${REPO}/tar.gz/refs/heads/${BRANCH}"
 
-echo "⬇️ Mise à jour des scripts depuis $RAW_BASE ..."
+
+# Messages
+echo "⬇️ Mise à jour depuis ${OWNER}/${REPO}@${BRANCH} ..."
 mkdir -p "$INSTALL_DIR"
+TMPDIR="$(mktemp -d)"
+TARBALL="$TMPDIR/repo.tar.gz"
 
-# Liste des scripts à mettre à jour (ajoute ici si tu en crées d’autres)
-FILES=(
-  "search.sh"
-  "update.sh"
-)
 
-for FILE in "${FILES[@]}"; do
-  echo "→ Téléchargement de $FILE ..."
-  if curl -fsSL "$RAW_BASE/$FILE" -o "$INSTALL_DIR/$FILE"; then
-    chmod +x "$INSTALL_DIR/$FILE"
-    echo "✅ $FILE mis à jour"
-  else
-    echo "⚠️ Impossible de récupérer $RAW_BASE/$FILE" >&2
-  fi
-done
+# Download tarball
+if ! curl -fsSL "$TARBALL_URL" -o "$TARBALL"; then
+echo "⚠️ Impossible de récupérer le tarball : $TARBALL_URL" >&2
+exit 1
+fi
 
-echo "🎉 Mise à jour terminée !"
+
+# Extract
+mkdir -p "$TMPDIR/extracted"
+tar -xzf "$TARBALL" -C "$TMPDIR/extracted"
+ROOT_DIR="$(find "$TMPDIR/extracted" -maxdepth 1 -mindepth 1 -type d | head -n1)"
+
+
+# Sync everything except README files (case-insensitive) and VCS/CI metadata
+# If rsync exists, use it for robust syncing; otherwise fall back to find/cp.
+if command -v rsync >/dev/null 2>&1; then
+rsync -a --delete \
+--exclude='README' --exclude='README.*' --exclude='readme' --exclude='readme.*' \
+--exclude='.git/' --exclude='.github/' --exclude='.gitignore' \
+"$ROOT_DIR"/ "$INSTALL_DIR"/
+else
+# Manual copy excluding README* and VCS files
+( cd "$ROOT_DIR" && \
+find . \
+-path './.git*' -prune -o \
+-path './.github*' -prune -o \
+-iname 'README*' -prune -o \
+-type f -print0 | \
+xargs -0 -I{} sh -c 'mkdir -p "${0%/*}"; cp -f "${1}" "$INSTALL_DIR/${0#./}"' '{}' '{}' )
+fi
+
+
+# Ensure all .sh are executable
+find "$INSTALL_DIR" -maxdepth 1 -type f -name '*.sh' -exec chmod +x {} +
+
+
+echo "🎉 Mise à jour terminée dans $INSTALL_DIR"
+
+
+# Cleanup
+rm -rf "$TMPDIR"
