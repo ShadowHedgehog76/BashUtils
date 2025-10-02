@@ -270,7 +270,7 @@ setup_menu_alias() {
   local menu_path="$install_dir/menu.sh"
   
   if [[ ! -f "$menu_path" ]]; then
-    echo "⚠️  Warning: menu.sh not found at $menu_path"
+    echo "Warning: menu.sh not found at $menu_path"
     return 1
   fi
   
@@ -367,14 +367,14 @@ for file in "${FILES_TO_UPDATE[@]}"; do
   # Skip files that don't exist locally (unless forced)
   if [[ ! -f "$target_path" && "$FORCE_UPDATE" != true ]]; then
     echo "  📄 $MSG_SKIPPING $file (not installed)"
-    ((skipped_files++))
+    skipped_files=$((skipped_files + 1))
     continue
   fi
   
   if update_file "$file"; then
-    ((successful_updates++))
+    successful_updates=$((successful_updates + 1))
   else
-    ((failed_updates++))
+    failed_updates=$((failed_updates + 1))
   fi
 done
 
