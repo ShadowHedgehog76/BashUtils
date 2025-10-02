@@ -106,14 +106,14 @@ print_header() {
   echo "║   |    \`.       | '\\Zq                                                                                                 ║"
   echo "║  _)      \\\\.___.,|     .'                                                                                              ║"
   echo "║  \\\\____   )MMMMMP|   .'                                                                                                ║"
-  echo "║       \`-'       \`--'                                                                                                   ║"
+  echo "║       \`-'       \`--'                          Welcome to BashUtils! Type a command or \"help\" for available commands.   ║"
   echo "║                                                                                                                        ║"
   echo "╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝"
   echo
 }
 
 print_welcome() {
-  echo "Welcome to BashUtils! Type a command or \"help\" for available commands."
+  echo ""
   echo
 }
 
@@ -229,19 +229,16 @@ process_command() {
       wait_for_user
       clear
       print_header
-      print_welcome
       ;;
     "list"|"ls")
       print_list
       wait_for_user
       clear
       print_header
-      print_welcome
       ;;
     "clear"|"cls")
       clear
       print_header
-      print_welcome
       ;;
     "lang")
       if [[ ${#args[@]} -gt 0 ]]; then
@@ -261,7 +258,6 @@ process_command() {
       wait_for_user
       clear
       print_header
-      print_welcome
       ;;
     "exit"|"quit"|"q")
       clear
@@ -279,7 +275,6 @@ process_command() {
       sleep 1
       clear
       print_header
-      print_welcome
       ;;
   esac
 }
@@ -311,7 +306,6 @@ fi
 
 # Interactive mode
 print_header
-print_welcome
 
 # Check if all script files exist and make them executable
 missing_scripts=()
