@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # setup-alias.sh — Setup script for creating BashUtils menu alias
 
+# Main function
+main() {
 echo "🔧 BashUtils Menu Setup"
 echo "======================="
 echo
@@ -30,7 +32,7 @@ echo
 # Check if menu.sh exists
 if [[ ! -f "$MENU_PATH" ]]; then
     echo "❌ menu.sh not found at: $MENU_PATH"
-    exit 1
+    return 1
 fi
 
 # Make menu.sh executable
@@ -60,7 +62,7 @@ if grep -q "alias bashutils=" "$RC_FILE" 2>/dev/null; then
         echo "✅ Removed existing alias"
     else
         echo "Setup cancelled."
-        exit 0
+        return 0
     fi
 fi
 
@@ -94,3 +96,7 @@ done
 
 echo
 echo "All scripts are now ready to use!"
+}
+
+# Call main function
+main

@@ -99,6 +99,8 @@ show_system_logs() {
     done
 }
 
+# Main function
+main() {
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -143,3 +145,7 @@ if [[ -z "$LOG_FILE" ]]; then
 else
     analyze_log "$LOG_FILE"
 fi
+}
+
+# Call main function with all arguments
+main "$@"

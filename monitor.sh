@@ -159,7 +159,7 @@ run_monitor() {
         log_message "INFO" "Starting continuous monitoring (interval: ${INTERVAL}s)"
         
         # Handle Ctrl+C gracefully
-        trap 'echo; log_message "INFO" "Monitoring stopped"; return 0' INT
+        trap 'echo; log_message "INFO" "Monitoring stopped"; exit 0' INT
         
         while true; do
             clear
@@ -171,6 +171,8 @@ run_monitor() {
     fi
 }
 
+# Main function
+main() {
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -249,3 +251,7 @@ done
 
 # Run the monitor
 run_monitor
+}
+
+# Call main function with all arguments
+main "$@"

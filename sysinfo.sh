@@ -130,6 +130,8 @@ Langue :
 
 print_usage() { set_lang; printf "%s\n" "$MSG_USAGE"; }
 
+# ===== Main function =====
+main() {
 # ===== Parse options =====
 while (( $# )); do
   case "${1:-}" in
@@ -336,3 +338,7 @@ else
     echo
   fi
 fi
+}
+
+# Call main function with all arguments
+main "$@"

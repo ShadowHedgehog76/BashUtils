@@ -161,6 +161,8 @@ format_json_output() {
     echo "}"
 }
 
+# Main function
+main() {
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -222,3 +224,7 @@ if [[ "$OUTPUT_FORMAT" == "json" ]]; then
 else
     echo "$results" | format_table_output
 fi
+}
+
+# Call main function with all arguments
+main "$@"

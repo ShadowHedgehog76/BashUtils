@@ -311,7 +311,7 @@ while [[ $# -gt 0 ]]; do
             LOG_RETENTION_DAYS="$2"
             if ! [[ "$LOG_RETENTION_DAYS" =~ ^[0-9]+$ ]] || [[ "$LOG_RETENTION_DAYS" -lt 0 ]]; then
                 echo "Error: Log retention days must be a non-negative integer" >&2
-                return 1
+                exit 1
             fi
             shift 2
             ;;
@@ -329,12 +329,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h|--help)
             show_help
-            return 0
+            exit 0
             ;;
         *)
             echo "Error: Unknown option $1" >&2
             show_help
-            return 1
+            exit 1
             ;;
     esac
 done

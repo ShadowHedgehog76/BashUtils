@@ -124,6 +124,8 @@ supports_pcre() { echo "" | grep -P "" >/dev/null 2>&1; }
 COLOR_MODE="always"
 if [[ -t 1 ]]; then COLOR_MODE="auto"; else COLOR_MODE="never"; fi
 
+# ===== Main function =====
+main() {
 # ===== Parse options =====
 ARGS=()
 while (( $# )); do
@@ -187,11 +189,11 @@ emit_unique_sorted() { sort -u; }
 
 # ===== Discovery backends =====
 iface_for_default_route() {
-  ip route get 1.1.1.1 2>/dev/null | awk '/dev/ {print $5; return}' || true
+  ip route get 1.1.1.1 2>/dev/null | awk '/dev/ {print $5; exit}' || true
 }
 
 cidr_guess_from_route() {
-  ip -4 route get 1.1.1.1 2>/dev/null | awk '{print $7"/24"; return}' || true
+  ip -4 route get 1.1.1.1 2>/dev/null | awk '{print $7"/24"; exit}' || true
 }
 
 collect_hosts() {
@@ -281,7 +283,7 @@ if is_glob "$PATTERN_OR_GLOB" && [[ ${#INCLUDES[@]} -eq 0 ]]; then
       printf "%s\t%s\t%s\n" "$ip" "$host" "$mac"
     fi
   done | emit_unique_sorted
-  return 0
+  exit 0
 fi
 
 echo "🔎 ${MSG_CONTENT_SEARCH} (${MODE_LABEL}) '${PATTERN_OR_GLOB}' ${MSG_IN} '${TARGET_LABEL}'..."
@@ -290,7 +292,7 @@ printf '%0.s=' {1..60}; echo
 RESULTS=$(collect_hosts || true)
 if [[ -z "${RESULTS}" ]]; then
   echo "${MSG_NO_RESULTS} '${PATTERN_OR_GLOB}'."
-  return 0
+  exit 0
 fi
 
 FILTERED=$(printf "%s\n" "$RESULTS" | ${GREP_CMD[@]} -- "$PATTERN_OR_GLOB" 2>/dev/null || true)
@@ -309,3 +311,7 @@ if [[ -z "$FINAL" ]]; then
 fi
 
 printf "%s\n" "$FINAL"
+}
+
+# Call main function with all arguments
+main "$@"

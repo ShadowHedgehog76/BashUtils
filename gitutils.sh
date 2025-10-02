@@ -182,6 +182,8 @@ cmd_size() {
     find "$repo_root" -type f -not -path "$repo_root/.git/*" | sed 's/.*\.//' | sort | uniq -c | sort -nr | head -10
 }
 
+# Main function
+main() {
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -220,3 +222,7 @@ case "$COMMAND" in
     "backup") cmd_backup ;;
     "size") cmd_size ;;
 esac
+}
+
+# Call main function with all arguments
+main "$@"

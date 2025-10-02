@@ -201,7 +201,7 @@ while [[ $# -gt 0 ]]; do
             OUTPUT_FORMAT="$2"
             if [[ ! "$OUTPUT_FORMAT" =~ ^(simple|detailed|json)$ ]]; then
                 echo "Error: Output format must be 'simple', 'detailed', or 'json'" >&2
-                return 1
+                exit 1
             fi
             shift 2
             ;;
@@ -211,12 +211,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h|--help)
             show_help
-            return 0
+            exit 0
             ;;
         *)
             echo "Error: Unknown option $1" >&2
             show_help
-            return 1
+            exit 1
             ;;
     esac
 done
@@ -224,7 +224,7 @@ done
 # Check dependencies
 if ! command -v curl >/dev/null 2>&1; then
     echo "Error: curl is required for speed testing" >&2
-    return 1
+    exit 1
 fi
 
 # Run speed test based on format

@@ -139,6 +139,8 @@ organize_by_size() {
     done
 }
 
+# Main function
+main() {
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -204,3 +206,7 @@ case "$MODE" in
 esac
 
 echo "Organization completed!"
+}
+
+# Call main function with all arguments
+main "$@"

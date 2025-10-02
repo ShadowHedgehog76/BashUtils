@@ -96,7 +96,7 @@ deploy_git() {
     fi
 }
 
-# Parse arguments
+# Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
         --source)
@@ -107,7 +107,7 @@ while [[ $# -gt 0 ]]; do
             METHOD="$2"
             if [[ ! "$METHOD" =~ ^(rsync|scp|git)$ ]]; then
                 echo "Error: Method must be 'rsync', 'scp', or 'git'" >&2
-                return 1
+                exit 1
             fi
             shift 2
             ;;
@@ -121,12 +121,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h|--help)
             show_help
-            return 0
+            exit 0
             ;;
         -*)
             echo "Error: Unknown option $1" >&2
             show_help
-            return 1
+            exit 1
             ;;
         *)
             TARGET="$1"
@@ -138,12 +138,12 @@ done
 if [[ -z "$TARGET" ]]; then
     echo "Error: No target specified" >&2
     show_help
-    return 1
+    exit 1
 fi
 
 if [[ ! -d "$SOURCE" ]]; then
     echo "Error: Source directory '$SOURCE' does not exist" >&2
-    return 1
+    exit 1
 fi
 
 # Deploy based on method

@@ -133,23 +133,23 @@ while (( $# )); do
     -e|--regex)  MODE="eregex"; shift ;;
     -p|--perl)   MODE="pcre"; shift ;;
     --name)
-      [[ $# -lt 2 ]] && { set_lang; echo "$MSG_ERR_NAME_NEEDS_GLOB" >&2; return 2; }
+      [[ $# -lt 2 ]] && { set_lang; echo "$MSG_ERR_NAME_NEEDS_GLOB" >&2; exit 2; }
       INCLUDES+=("$2"); shift 2 ;;
     --exclude)
-      [[ $# -lt 2 ]] && { set_lang; echo "$MSG_ERR_EXCLUDE_NEEDS_GLOB" >&2; return 2; }
+      [[ $# -lt 2 ]] && { set_lang; echo "$MSG_ERR_EXCLUDE_NEEDS_GLOB" >&2; exit 2; }
       EXCLUDES+=("$2"); shift 2 ;;
     --) shift; while (( $# )); do ARGS+=("$1"); shift; done ;;
     -*)
-      set_lang; echo "ERROR: $MSG_ERR_UNKNOWN_OPT: $1" >&2; print_usage; return 2 ;;
+      set_lang; echo "ERROR: $MSG_ERR_UNKNOWN_OPT: $1" >&2; print_usage; exit 2 ;;
     *) ARGS+=("$1"); shift ;;
   esac
 done
 
 # Help
-if [[ "${SHOW_HELP:-0}" -eq 1 ]]; then print_usage; return 0; fi
+if [[ "${SHOW_HELP:-0}" -eq 1 ]]; then print_usage; exit 0; fi
 
 # Positionals
-[[ ${#ARGS[@]} -lt 1 ]] && { print_usage; return 2; }
+[[ ${#ARGS[@]} -lt 1 ]] && { print_usage; exit 2; }
 PATTERN_OR_GLOB="${ARGS[0]}"
 if [[ ${#ARGS[@]} -ge 2 ]]; then START="${ARGS[1]}"; fi
 
@@ -168,7 +168,7 @@ if is_glob "$PATTERN_OR_GLOB" && [[ ${#INCLUDES[@]} -eq 0 ]]; then
   else
     find "$START" -type f -name "$PATTERN_OR_GLOB" -print
   fi
-  return 0
+  exit 0
 fi
 
 # ===== Content search =====
@@ -176,7 +176,7 @@ case "$MODE" in
   simple) GREP_OPTS=(-r -n -F) ; MODE_LABEL="$MSG_MODE_SIMPLE" ;;
   eregex) GREP_OPTS=(-r -n -E) ; MODE_LABEL="$MSG_MODE_EREGEX" ;;
   pcre)   GREP_OPTS=(-r -n -P) ; MODE_LABEL="$MSG_MODE_PCRE" ;;
-  *) echo "$MSG_ERR_INTERNAL: unknown mode '$MODE'"; return 2 ;;
+  *) echo "$MSG_ERR_INTERNAL: unknown mode '$MODE'"; exit 2 ;;
 esac
 
 GREP_CMD=(grep "${GREP_OPTS[@]}" --color=always --binary-files=without-match)

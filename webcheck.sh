@@ -206,6 +206,8 @@ json_check() {
 EOF
 }
 
+# Main function
+main() {
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -283,3 +285,7 @@ case "$OUTPUT_FORMAT" in
         json_check "$URL"
         ;;
 esac
+}
+
+# Call main function with all arguments
+main "$@"

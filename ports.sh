@@ -218,6 +218,8 @@ format_output() {
     esac
 }
 
+# Main function
+main() {
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -291,3 +293,7 @@ if [[ ${#scan_results[@]} -gt 0 ]]; then
 else
     echo "No open ports found in the specified range." >&2
 fi
+}
+
+# Call main function with all arguments
+main "$@"
