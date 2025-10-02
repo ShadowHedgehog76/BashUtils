@@ -131,14 +131,14 @@ while (( $# )); do
     --dry-run) DRY_RUN=true; shift ;;
     --no-backup) BACKUP_OLD=false; shift ;;
     --dir)
-      [[ $# -lt 2 ]] && { echo "ERROR: --dir requires a directory path" >&2; exit 2; }
+      [[ $# -lt 2 ]] && { echo "ERROR: --dir requires a directory path" >&2; return 2; }
       INSTALL_DIR="$2"; shift 2 ;;
-    -*) echo "ERROR: Unknown option: $1" >&2; print_usage; exit 2 ;;
-    *) echo "ERROR: Unexpected argument: $1" >&2; print_usage; exit 2 ;;
+    -*) echo "ERROR: Unknown option: $1" >&2; print_usage; return 2 ;;
+    *) echo "ERROR: Unexpected argument: $1" >&2; print_usage; return 2 ;;
   esac
 done
 
-if [[ "${SHOW_HELP:-0}" -eq 1 ]]; then print_usage; exit 0; fi
+if [[ "${SHOW_HELP:-0}" -eq 1 ]]; then print_usage; return 0; fi
 set_lang
 
 # ===== File list to update =====
@@ -339,14 +339,14 @@ set_lang
 
 # Check dependencies
 if ! check_dependencies; then
-  exit 1
+  return 1
 fi
 
 # Check if install directory exists
 if [[ ! -d "$INSTALL_DIR" ]]; then
   echo "❌ Installation directory not found: $INSTALL_DIR"
   echo "Run install.sh first or specify correct directory with --dir"
-  exit 1
+  return 1
 fi
 
 echo "$MSG_UPDATING..."
@@ -429,6 +429,6 @@ else
     echo "✅ $MSG_NO_CHANGES - All scripts are up to date!"
   else
     echo "❌ Some updates failed. Please check your internet connection and try again."
-    exit 1
+    return 1
   fi
 fi

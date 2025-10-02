@@ -131,7 +131,7 @@ while [[ $# -gt 0 ]]; do
             QUERY_TYPE="$2"
             if [[ ! "$QUERY_TYPE" =~ ^(A|AAAA|MX|NS|TXT|CNAME|PTR|SOA)$ ]]; then
                 echo "Error: Invalid query type: $QUERY_TYPE" >&2
-                exit 1
+                return 1
             fi
             shift 2
             ;;
@@ -149,12 +149,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h|--help)
             show_help
-            exit 0
+            return 0
             ;;
         -*)
             echo "Error: Unknown option $1" >&2
             show_help
-            exit 1
+            return 1
             ;;
         *)
             DOMAIN="$1"
@@ -165,7 +165,7 @@ done
 
 if [[ -z "$DOMAIN" ]]; then
     show_dns_info
-    exit 0
+    return 0
 fi
 
 # Perform DNS lookup

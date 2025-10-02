@@ -106,7 +106,7 @@ while [[ $# -gt 0 ]]; do
             LINES="$2"
             if ! [[ "$LINES" =~ ^[0-9]+$ ]] || [[ "$LINES" -lt 1 ]]; then
                 echo "Error: Lines must be a positive integer" >&2
-                exit 1
+                return 1
             fi
             shift 2
             ;;
@@ -124,12 +124,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h|--help)
             show_help
-            exit 0
+            return 0
             ;;
         -*)
             echo "Error: Unknown option $1" >&2
             show_help
-            exit 1
+            return 1
             ;;
         *)
             LOG_FILE="$1"

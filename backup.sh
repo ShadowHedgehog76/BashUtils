@@ -97,12 +97,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h|--help)
             show_help
-            exit 0
+            return 0
             ;;
         -*)
             echo "Error: Unknown option $1" >&2
             show_help
-            exit 1
+            return 1
             ;;
         *)
             SOURCES+=("$1")
@@ -114,7 +114,7 @@ done
 if [[ ${#SOURCES[@]} -eq 0 ]]; then
     echo "Error: No source specified" >&2
     show_help
-    exit 1
+    return 1
 fi
 
 # Create backups

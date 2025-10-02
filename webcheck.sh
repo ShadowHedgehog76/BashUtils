@@ -213,7 +213,7 @@ while [[ $# -gt 0 ]]; do
             TIMEOUT="$2"
             if ! [[ "$TIMEOUT" =~ ^[0-9]+$ ]] || [[ "$TIMEOUT" -lt 1 ]]; then
                 echo "Error: Timeout must be a positive integer" >&2
-                exit 1
+                return 1
             fi
             shift 2
             ;;
@@ -229,7 +229,7 @@ while [[ $# -gt 0 ]]; do
             OUTPUT_FORMAT="$2"
             if [[ ! "$OUTPUT_FORMAT" =~ ^(simple|detailed|json)$ ]]; then
                 echo "Error: Output format must be 'simple', 'detailed', or 'json'" >&2
-                exit 1
+                return 1
             fi
             shift 2
             ;;
@@ -239,12 +239,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h|--help)
             show_help
-            exit 0
+            return 0
             ;;
         -*)
             echo "Error: Unknown option $1" >&2
             show_help
-            exit 1
+            return 1
             ;;
         *)
             URL="$1"
@@ -256,19 +256,19 @@ done
 if [[ -z "$URL" ]]; then
     echo "Error: No URL specified" >&2
     show_help
-    exit 1
+    return 1
 fi
 
 # Validate URL format
 if [[ ! "$URL" =~ ^https?:// ]]; then
     echo "Error: URL must start with http:// or https://" >&2
-    exit 1
+    return 1
 fi
 
 # Check dependencies
 if ! command -v curl >/dev/null 2>&1; then
     echo "Error: curl is required for website checking" >&2
-    exit 1
+    return 1
 fi
 
 # Run check based on format

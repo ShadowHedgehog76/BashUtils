@@ -208,7 +208,7 @@ while [[ $# -gt 0 ]]; do
             CHECK_TYPE="$2"
             if [[ ! "$CHECK_TYPE" =~ ^(basic|network|files)$ ]]; then
                 echo "Error: Check type must be 'basic', 'network', or 'files'" >&2
-                exit 1
+                return 1
             fi
             shift 2
             ;;
@@ -216,7 +216,7 @@ while [[ $# -gt 0 ]]; do
             OUTPUT_FORMAT="$2"
             if [[ ! "$OUTPUT_FORMAT" =~ ^(table|json)$ ]]; then
                 echo "Error: Output format must be 'table' or 'json'" >&2
-                exit 1
+                return 1
             fi
             shift 2
             ;;
@@ -226,12 +226,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h|--help)
             show_help
-            exit 0
+            return 0
             ;;
         *)
             echo "Error: Unknown option $1" >&2
             show_help
-            exit 1
+            return 1
             ;;
     esac
 done

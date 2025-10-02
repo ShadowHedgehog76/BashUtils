@@ -139,7 +139,7 @@ parse_port_range() {
             ports+=("$i")
         else
             echo "Error: Invalid port specification: $i" >&2
-            exit 1
+            return 1
         fi
     done
     
@@ -233,7 +233,7 @@ while [[ $# -gt 0 ]]; do
             SCAN_TYPE="$2"
             if [[ ! "$SCAN_TYPE" =~ ^(tcp|udp|both)$ ]]; then
                 echo "Error: Scan type must be 'tcp', 'udp', or 'both'" >&2
-                exit 1
+                return 1
             fi
             shift 2
             ;;
@@ -241,7 +241,7 @@ while [[ $# -gt 0 ]]; do
             OUTPUT_FORMAT="$2"
             if [[ ! "$OUTPUT_FORMAT" =~ ^(table|json|csv)$ ]]; then
                 echo "Error: Output format must be 'table', 'json', or 'csv'" >&2
-                exit 1
+                return 1
             fi
             shift 2
             ;;
@@ -249,7 +249,7 @@ while [[ $# -gt 0 ]]; do
             TIMEOUT="$2"
             if ! [[ "$TIMEOUT" =~ ^[0-9]+$ ]] || [[ "$TIMEOUT" -lt 1 ]]; then
                 echo "Error: Timeout must be a positive integer" >&2
-                exit 1
+                return 1
             fi
             shift 2
             ;;
@@ -271,12 +271,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h|--help)
             show_help
-            exit 0
+            return 0
             ;;
         *)
             echo "Error: Unknown option $1" >&2
             show_help
-            exit 1
+            return 1
             ;;
     esac
 done

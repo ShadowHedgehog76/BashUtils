@@ -141,17 +141,17 @@ while (( $# )); do
     -d|--detailed) MODE="detailed"; shift ;;
     -j|--json) MODE="json"; shift ;;
     --include)
-      [[ $# -lt 2 ]] && { echo "ERROR: --include requires a section" >&2; exit 2; }
+      [[ $# -lt 2 ]] && { echo "ERROR: --include requires a section" >&2; return 2; }
       INCLUDES+=("$2"); shift 2 ;;
     --exclude)
-      [[ $# -lt 2 ]] && { echo "ERROR: --exclude requires a section" >&2; exit 2; }
+      [[ $# -lt 2 ]] && { echo "ERROR: --exclude requires a section" >&2; return 2; }
       EXCLUDES+=("$2"); shift 2 ;;
-    -*) echo "ERROR: Unknown option: $1" >&2; print_usage; exit 2 ;;
-    *) echo "ERROR: Unexpected argument: $1" >&2; print_usage; exit 2 ;;
+    -*) echo "ERROR: Unknown option: $1" >&2; print_usage; return 2 ;;
+    *) echo "ERROR: Unexpected argument: $1" >&2; print_usage; return 2 ;;
   esac
 done
 
-if [[ "${SHOW_HELP:-0}" -eq 1 ]]; then print_usage; exit 0; fi
+if [[ "${SHOW_HELP:-0}" -eq 1 ]]; then print_usage; return 0; fi
 set_lang
 
 # ===== Helper functions =====

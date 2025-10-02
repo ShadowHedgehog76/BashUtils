@@ -36,7 +36,7 @@ show_help() {
 check_git_repo() {
     if ! git rev-parse --git-dir >/dev/null 2>&1; then
         echo "Error: Not in a git repository" >&2
-        exit 1
+        return 1
     fi
 }
 
@@ -157,7 +157,7 @@ cmd_backup() {
         echo "Size: $(du -sh "$backup_dir/$backup_name" | cut -f1)"
     else
         echo "Backup failed" >&2
-        exit 1
+        return 1
     fi
 }
 
@@ -195,12 +195,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h|--help)
             show_help
-            exit 0
+            return 0
             ;;
         *)
             echo "Error: Unknown command or option: $1" >&2
             show_help
-            exit 1
+            return 1
             ;;
     esac
 done
@@ -208,7 +208,7 @@ done
 if [[ -z "$COMMAND" ]]; then
     echo "Error: No command specified" >&2
     show_help
-    exit 1
+    return 1
 fi
 
 # Execute command

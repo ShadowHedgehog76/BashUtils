@@ -146,7 +146,7 @@ while [[ $# -gt 0 ]]; do
             MODE="$2"
             if [[ ! "$MODE" =~ ^(type|date|size)$ ]]; then
                 echo "Error: Mode must be 'type', 'date', or 'size'" >&2
-                exit 1
+                return 1
             fi
             shift 2
             ;;
@@ -160,19 +160,19 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h|--help)
             show_help
-            exit 0
+            return 0
             ;;
         -*)
             echo "Error: Unknown option $1" >&2
             show_help
-            exit 1
+            return 1
             ;;
         *)
             if [[ -z "$TARGET_DIR" ]]; then
                 TARGET_DIR="$1"
             else
                 echo "Error: Multiple directories specified" >&2
-                exit 1
+                return 1
             fi
             shift
             ;;
@@ -182,12 +182,12 @@ done
 if [[ -z "$TARGET_DIR" ]]; then
     echo "Error: No directory specified" >&2
     show_help
-    exit 1
+    return 1
 fi
 
 if [[ ! -d "$TARGET_DIR" ]]; then
     echo "Error: Directory '$TARGET_DIR' does not exist" >&2
-    exit 1
+    return 1
 fi
 
 # Organize files

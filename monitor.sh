@@ -159,7 +159,7 @@ run_monitor() {
         log_message "INFO" "Starting continuous monitoring (interval: ${INTERVAL}s)"
         
         # Handle Ctrl+C gracefully
-        trap 'echo; log_message "INFO" "Monitoring stopped"; exit 0' INT
+        trap 'echo; log_message "INFO" "Monitoring stopped"; return 0' INT
         
         while true; do
             clear
@@ -178,7 +178,7 @@ while [[ $# -gt 0 ]]; do
             INTERVAL="$2"
             if ! [[ "$INTERVAL" =~ ^[0-9]+$ ]] || [[ "$INTERVAL" -lt 1 ]]; then
                 echo "Error: Interval must be a positive integer" >&2
-                exit 1
+                return 1
             fi
             shift 2
             ;;
@@ -186,7 +186,7 @@ while [[ $# -gt 0 ]]; do
             CPU_THRESHOLD="$2"
             if ! [[ "$CPU_THRESHOLD" =~ ^[0-9]+$ ]] || [[ "$CPU_THRESHOLD" -lt 1 ]] || [[ "$CPU_THRESHOLD" -gt 100 ]]; then
                 echo "Error: CPU threshold must be between 1 and 100" >&2
-                exit 1
+                return 1
             fi
             shift 2
             ;;
@@ -194,7 +194,7 @@ while [[ $# -gt 0 ]]; do
             MEM_THRESHOLD="$2"
             if ! [[ "$MEM_THRESHOLD" =~ ^[0-9]+$ ]] || [[ "$MEM_THRESHOLD" -lt 1 ]] || [[ "$MEM_THRESHOLD" -gt 100 ]]; then
                 echo "Error: Memory threshold must be between 1 and 100" >&2
-                exit 1
+                return 1
             fi
             shift 2
             ;;
@@ -202,7 +202,7 @@ while [[ $# -gt 0 ]]; do
             DISK_THRESHOLD="$2"
             if ! [[ "$DISK_THRESHOLD" =~ ^[0-9]+$ ]] || [[ "$DISK_THRESHOLD" -lt 1 ]] || [[ "$DISK_THRESHOLD" -gt 100 ]]; then
                 echo "Error: Disk threshold must be between 1 and 100" >&2
-                exit 1
+                return 1
             fi
             shift 2
             ;;
@@ -210,7 +210,7 @@ while [[ $# -gt 0 ]]; do
             ALERT_MODE="$2"
             if [[ ! "$ALERT_MODE" =~ ^(console|log|both)$ ]]; then
                 echo "Error: Alert mode must be 'console', 'log', or 'both'" >&2
-                exit 1
+                return 1
             fi
             shift 2
             ;;
@@ -237,12 +237,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h|--help)
             show_help
-            exit 0
+            return 0
             ;;
         *)
             echo "Error: Unknown option $1" >&2
             show_help
-            exit 1
+            return 1
             ;;
     esac
 done

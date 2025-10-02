@@ -136,20 +136,20 @@ while (( $# )); do
     -e|--regex)  MODE="eregex"; shift ;;
     -p|--perl)   MODE="pcre"; shift ;;
     --name)
-      [[ $# -lt 2 ]] && { set_lang; echo "$MSG_ERR_NAME_NEEDS_GLOB" >&2; exit 2; }
+      [[ $# -lt 2 ]] && { set_lang; echo "$MSG_ERR_NAME_NEEDS_GLOB" >&2; return 2; }
       INCLUDES+=("$2"); shift 2 ;;
     --exclude)
-      [[ $# -lt 2 ]] && { set_lang; echo "$MSG_ERR_EXCLUDE_NEEDS_GLOB" >&2; exit 2; }
+      [[ $# -lt 2 ]] && { set_lang; echo "$MSG_ERR_EXCLUDE_NEEDS_GLOB" >&2; return 2; }
       EXCLUDES+=("$2"); shift 2 ;;
     --) shift; while (( $# )); do ARGS+=("$1"); shift; done ;;
-    -*) set_lang; echo "ERROR: $MSG_ERR_UNKNOWN_OPT: $1" >&2; print_usage; exit 2 ;;
+    -*) set_lang; echo "ERROR: $MSG_ERR_UNKNOWN_OPT: $1" >&2; print_usage; return 2 ;;
     *) ARGS+=("$1"); shift ;;
   esac
 done
 
-if [[ "${SHOW_HELP:-0}" -eq 1 ]]; then print_usage; exit 0; fi
+if [[ "${SHOW_HELP:-0}" -eq 1 ]]; then print_usage; return 0; fi
 
-[[ ${#ARGS[@]} -lt 1 ]] && { print_usage; exit 2; }
+[[ ${#ARGS[@]} -lt 1 ]] && { print_usage; return 2; }
 PATTERN_OR_GLOB="${ARGS[0]}"
 if [[ ${#ARGS[@]} -ge 2 ]]; then START_NET="${ARGS[1]}"; fi
 
@@ -187,11 +187,11 @@ emit_unique_sorted() { sort -u; }
 
 # ===== Discovery backends =====
 iface_for_default_route() {
-  ip route get 1.1.1.1 2>/dev/null | awk '/dev/ {print $5; exit}' || true
+  ip route get 1.1.1.1 2>/dev/null | awk '/dev/ {print $5; return}' || true
 }
 
 cidr_guess_from_route() {
-  ip -4 route get 1.1.1.1 2>/dev/null | awk '{print $7"/24"; exit}' || true
+  ip -4 route get 1.1.1.1 2>/dev/null | awk '{print $7"/24"; return}' || true
 }
 
 collect_hosts() {
@@ -263,7 +263,7 @@ case "$MODE" in
   pcre)
     if supports_pcre; then GREP_OPTS=(-P); MODE_LABEL="$MSG_MODE_PCRE";
     else echo "$MSG_WARN_NO_PCRE" >&2; GREP_OPTS=(-E); MODE_LABEL="$MSG_MODE_EREGEX"; fi ;;
-  *) echo "$MSG_ERR_INTERNAL: unknown mode '$MODE'"; exit 2 ;;
+  *) echo "$MSG_ERR_INTERNAL: unknown mode '$MODE'"; return 2 ;;
 esac
 
 GREP_CMD=(grep -n --color="$COLOR_MODE" "${GREP_OPTS[@]}")
@@ -281,7 +281,7 @@ if is_glob "$PATTERN_OR_GLOB" && [[ ${#INCLUDES[@]} -eq 0 ]]; then
       printf "%s\t%s\t%s\n" "$ip" "$host" "$mac"
     fi
   done | emit_unique_sorted
-  exit 0
+  return 0
 fi
 
 echo "🔎 ${MSG_CONTENT_SEARCH} (${MODE_LABEL}) '${PATTERN_OR_GLOB}' ${MSG_IN} '${TARGET_LABEL}'..."
@@ -290,7 +290,7 @@ printf '%0.s=' {1..60}; echo
 RESULTS=$(collect_hosts || true)
 if [[ -z "${RESULTS}" ]]; then
   echo "${MSG_NO_RESULTS} '${PATTERN_OR_GLOB}'."
-  exit 0
+  return 0
 fi
 
 FILTERED=$(printf "%s\n" "$RESULTS" | ${GREP_CMD[@]} -- "$PATTERN_OR_GLOB" 2>/dev/null || true)
@@ -305,7 +305,7 @@ done <<<"$FILTERED" | emit_unique_sorted)
 
 if [[ -z "$FINAL" ]]; then
   echo "${MSG_NO_RESULTS} '${PATTERN_OR_GLOB}'."
-  exit 0
+  return 0
 fi
 
 printf "%s\n" "$FINAL"
