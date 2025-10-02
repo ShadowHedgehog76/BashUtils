@@ -185,19 +185,19 @@ execute_script() {
         echo "❌ Command failed with exit code: $exit_code"
       fi
       
-      # Wait for user acknowledgment before clearing screen
+      # Wait for user acknowledgment before returning to menu
       wait_for_user
       
     else
       echo "❌ Script not found or not executable: $script_path"
       wait_for_user
-      return 1
+      # Don't return 1, let the function continue to restart menu
     fi
   else
     echo "❌ Command not found: $command"
     echo "Type 'help' to see available commands"
     wait_for_user
-    return 1
+    # Don't return 1, let the function continue to restart menu
   fi
 }
 
@@ -213,23 +213,31 @@ process_command() {
     "help"|"h")
       print_help
       wait_for_user
+      clear
+      print_header
+      print_welcome
       ;;
     "list"|"ls")
       print_list
       wait_for_user
+      clear
+      print_header
+      print_welcome
       ;;
     "clear"|"cls")
-      # Just clear - no need to wait
+      clear
+      print_header
+      print_welcome
       ;;
     "lang")
       if [[ ${#args[@]} -gt 0 ]]; then
         case "${args[0]}" in
           "en"|"fr"|"jp")
             LANG_CODE="${args[0]}"
-            echo "Language changed to: ${args[0]}"
+            echo "✅ Language changed to: ${args[0]}"
             ;;
           *)
-            echo "Invalid language. Use: en, fr, or jp"
+            echo "❌ Invalid language. Use: en, fr, or jp"
             ;;
         esac
       else
@@ -237,6 +245,9 @@ process_command() {
         echo "Available languages: en, fr, jp"
       fi
       wait_for_user
+      clear
+      print_header
+      print_welcome
       ;;
     "exit"|"quit"|"q")
       clear
@@ -249,14 +260,14 @@ process_command() {
       ;;
     *)
       execute_script "$command" "${args[@]}"
+      echo
+      echo "🔄 Returning to main menu..."
+      sleep 1
+      clear
+      print_header
+      print_welcome
       ;;
   esac
-  
-  # After any command (except empty or exit), refresh the menu
-  if [[ "$command" != "" ]]; then
-    print_header
-    print_welcome
-  fi
 }
 
 # ===== Parse command line options =====  
