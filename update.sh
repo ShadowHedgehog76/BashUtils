@@ -264,6 +264,73 @@ check_dependencies() {
   return 0
 }
 
+setup_menu_alias() {
+  local install_dir="$1"
+  local alias_name="menu"
+  local menu_path="$install_dir/menu.sh"
+  
+  if [[ ! -f "$menu_path" ]]; then
+    echo "⚠️  Warning: menu.sh not found at $menu_path"
+    return 1
+  fi
+  
+  echo "🔗 Setting up '$alias_name' alias..."
+  
+  # Detect shell and appropriate config file
+  local shell_config=""
+  local current_shell=$(basename "${SHELL:-/bin/bash}")
+  
+  case "$current_shell" in
+    bash)
+      if [[ -f "$HOME/.bashrc" ]]; then
+        shell_config="$HOME/.bashrc"
+      elif [[ -f "$HOME/.bash_profile" ]]; then
+        shell_config="$HOME/.bash_profile"
+      else
+        shell_config="$HOME/.bashrc"
+        touch "$shell_config"
+      fi
+      ;;
+    zsh)
+      if [[ -f "$HOME/.zshrc" ]]; then
+        shell_config="$HOME/.zshrc"
+      else
+        shell_config="$HOME/.zshrc"
+        touch "$shell_config"
+      fi
+      ;;
+    *)
+      # Default to bashrc for unknown shells
+      shell_config="$HOME/.bashrc"
+      if [[ ! -f "$shell_config" ]]; then
+        touch "$shell_config"
+      fi
+      ;;
+  esac
+  
+  # Create the alias command
+  local alias_cmd="alias $alias_name='cd \"$install_dir\" && ./menu.sh'"
+  
+  # Check if alias already exists
+  if grep -q "alias $alias_name=" "$shell_config" 2>/dev/null; then
+    echo "   📝 Updating existing '$alias_name' alias in $shell_config"
+    # Remove old alias and add new one
+    grep -v "alias $alias_name=" "$shell_config" > "$shell_config.tmp" && mv "$shell_config.tmp" "$shell_config"
+  else
+    echo "   📝 Adding '$alias_name' alias to $shell_config"
+  fi
+  
+  # Add the alias
+  echo "" >> "$shell_config"
+  echo "# BashUtils menu alias - added by update.sh" >> "$shell_config"
+  echo "$alias_cmd" >> "$shell_config"
+  
+  echo "   ✅ Alias '$alias_name' updated successfully!"
+  echo "   📋 Usage: Open a new terminal and type '$alias_name'"
+  
+  return 0
+}
+
 # ===== Main execution =====
 echo "🔄 $MSG_UPDATER" 
 printf '%0.s=' {1..50}; echo
@@ -295,7 +362,7 @@ successful_updates=0
 skipped_files=0
 
 for file in "${FILES_TO_UPDATE[@]}"; do
-  local target_path="$INSTALL_DIR/$file"
+  target_path="$INSTALL_DIR/$file"
   
   # Skip files that don't exist locally (unless forced)
   if [[ ! -f "$target_path" && "$FORCE_UPDATE" != true ]]; then
@@ -334,13 +401,28 @@ else
     echo
     echo "✅ $MSG_COMPLETE!"
     echo
-    echo "🚀 Updates applied successfully. You can now use the updated scripts."
     
-    # If menu.sh was updated, suggest restarting it
+    # Setup/update menu alias if menu.sh exists
     if [[ -f "$INSTALL_DIR/menu.sh" ]]; then
-      echo
-      echo "💡 If you're using the menu system, restart it to use the updated version:"
-      echo "   cd $INSTALL_DIR && ./menu.sh"
+      if setup_menu_alias "$INSTALL_DIR"; then
+        echo
+        echo "🚀 Updates complete!"
+        echo "💡 Restart your shell to use updated scripts:"
+        echo "   source ~/.bashrc   # or source ~/.zshrc for zsh"
+        echo
+        echo "📋 Access the updated menu:"
+        echo "   menu              # Use the alias"
+      else
+        echo
+        echo "🚀 Updates applied successfully."
+        echo "💡 Manual alias setup may be needed:"
+        echo "   echo 'alias menu=\"cd $INSTALL_DIR && ./menu.sh\"' >> ~/.bashrc"
+        echo
+        echo "� Direct access:"
+        echo "   cd $INSTALL_DIR && ./menu.sh"
+      fi
+    else
+      echo "🚀 Updates applied successfully. You can now use the updated scripts."
     fi
   elif [[ $successful_updates -eq 0 && $failed_updates -eq 0 ]]; then
     echo

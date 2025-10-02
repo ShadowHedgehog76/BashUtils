@@ -220,6 +220,73 @@ check_dependencies() {
   return 0
 }
 
+setup_menu_alias() {
+  local install_dir="$1"
+  local alias_name="menu"
+  local menu_path="$install_dir/menu.sh"
+  
+  if [[ ! -f "$menu_path" ]]; then
+    echo "⚠️  Warning: menu.sh not found at $menu_path"
+    return 1
+  fi
+  
+  echo "🔗 Setting up '$alias_name' alias..."
+  
+  # Detect shell and appropriate config file
+  local shell_config=""
+  local current_shell=$(basename "${SHELL:-/bin/bash}")
+  
+  case "$current_shell" in
+    bash)
+      if [[ -f "$HOME/.bashrc" ]]; then
+        shell_config="$HOME/.bashrc"
+      elif [[ -f "$HOME/.bash_profile" ]]; then
+        shell_config="$HOME/.bash_profile"
+      else
+        shell_config="$HOME/.bashrc"
+        touch "$shell_config"
+      fi
+      ;;
+    zsh)
+      if [[ -f "$HOME/.zshrc" ]]; then
+        shell_config="$HOME/.zshrc"
+      else
+        shell_config="$HOME/.zshrc"
+        touch "$shell_config"
+      fi
+      ;;
+    *)
+      # Default to bashrc for unknown shells
+      shell_config="$HOME/.bashrc"
+      if [[ ! -f "$shell_config" ]]; then
+        touch "$shell_config"
+      fi
+      ;;
+  esac
+  
+  # Create the alias command
+  local alias_cmd="alias $alias_name='cd \"$install_dir\" && ./menu.sh'"
+  
+  # Check if alias already exists
+  if grep -q "alias $alias_name=" "$shell_config" 2>/dev/null; then
+    echo "   📝 Updating existing '$alias_name' alias in $shell_config"
+    # Remove old alias and add new one
+    grep -v "alias $alias_name=" "$shell_config" > "$shell_config.tmp" && mv "$shell_config.tmp" "$shell_config"
+  else
+    echo "   📝 Adding '$alias_name' alias to $shell_config"
+  fi
+  
+  # Add the alias
+  echo "" >> "$shell_config"
+  echo "# BashUtils menu alias - added by install.sh" >> "$shell_config"
+  echo "$alias_cmd" >> "$shell_config"
+  
+  echo "   ✅ Alias '$alias_name' added successfully!"
+  echo "   📋 Usage: Open a new terminal and type '$alias_name'"
+  
+  return 0
+}
+
 # ===== Main execution =====
 echo "📦 $MSG_INSTALLER"
 printf '%0.s=' {1..50}; echo
@@ -255,9 +322,9 @@ successful_downloads=0
 
 for file in "${FILES_TO_DOWNLOAD[@]}"; do
   if download_file "$file"; then
-    ((successful_downloads++))
+    ((successful_downloads++)) || true
   else
-    ((failed_downloads++))
+    ((failed_downloads++)) || true
   fi
 done
 
@@ -280,27 +347,35 @@ else
     echo
     echo "✅ $MSG_COMPLETE!"
     echo
-    echo "🚀 Next steps:"
-    echo "1. Add to PATH or create alias:"
-    echo "   echo 'export PATH=\"$INSTALL_DIR:\$PATH\"' >> ~/.bashrc"
-    echo "   # OR"
-    echo "   echo 'alias bashutils=\"cd $INSTALL_DIR && ./menu.sh\"' >> ~/.bashrc"
-    echo
-    echo "2. Reload your shell:"
-    echo "   source ~/.bashrc"
-    echo
-    echo "3. Run the setup script:"
-    echo "   cd $INSTALL_DIR && ./setup-alias.sh"
-    echo
-    echo "4. Start using BashUtils:"
-    echo "   bashutils"
     
-    # If menu.sh was installed, show how to use it
-    if [[ -f "$INSTALL_DIR/menu.sh" ]]; then
+    # Automatically setup menu alias
+    if setup_menu_alias "$INSTALL_DIR"; then
       echo
-      echo "📋 Available via menu system:"
-      echo "   cd $INSTALL_DIR && ./menu.sh"
+      echo "🚀 Quick start:"
+      echo "1. Reload your shell:"
+      echo "   source ~/.bashrc   # or source ~/.zshrc for zsh"
+      echo
+      echo "2. Start using BashUtils:"
+      echo "   menu              # Opens the interactive menu"
+      echo
+      echo "3. Optional - Add to PATH for direct script access:"
+      echo "   echo 'export PATH=\"$INSTALL_DIR:\$PATH\"' >> ~/.bashrc"
+    else
+      echo
+      echo "🚀 Manual setup required:"
+      echo "1. Add alias manually:"
+      echo "   echo 'alias menu=\"cd $INSTALL_DIR && ./menu.sh\"' >> ~/.bashrc"
+      echo
+      echo "2. Reload your shell:"
+      echo "   source ~/.bashrc"
+      echo
+      echo "3. Start using BashUtils:"
+      echo "   menu"
     fi
+    
+    echo
+    echo "📋 Alternative access:"
+    echo "   cd $INSTALL_DIR && ./menu.sh"
   else
     echo "❌ Installation failed. Please check your internet connection and try again."
     exit 1
