@@ -91,19 +91,19 @@ print_header() {
   clear
   echo "╔════════════════════════════════════════════════════════════════════════════╗"
   echo "║  888888b.                     888      888     888 888    d8b 888          ║"
-  echo "║  888  "88b                    888      888     888 888    Y8P 888          ║"
+  echo "║  888  \"88b                    888      888     888 888    Y8P 888          ║"
   echo "║  888  .88P                    888      888     888 888        888          ║"
   echo "║  8888888K.   8888b.  .d8888b  88888b.  888     888 888888 888 888 .d8888b  ║"
-  echo "║  888  "Y88b     "88b 88K      888 "88b 888     888 888    888 888 88K      ║"
-  echo "║  888    888 .d888888 "Y8888b. 888  888 888     888 888    888 888 "Y8888b. ║"
+  echo "║  888  \"Y88b     \"88b 88K      888 \"88b 888     888 888    888 888 88K      ║"
+  echo "║  888    888 .d888888 \"Y8888b. 888  888 888     888 888    888 888 \"Y8888b. ║"
   echo "║  888   d88P 888  888      X88 888  888 Y88b. .d88P Y88b.  888 888      X88 ║"
-  echo "║  8888888P"  "Y888888  88888P' 888  888  "Y88888P"   "Y888 888 888  88888P' ║"
+  echo "║  8888888P\"  \"Y888888  88888P' 888  888  \"Y88888P\"   \"Y888 888 888  88888P' ║"
   echo "╚════════════════════════════════════════════════════════════════════════════╝"
   echo
 }
 
 print_welcome() {
-  echo "Welcome to BashUtils! Type a command or 'help' for available commands."
+  echo "Welcome to BashUtils! Type a command or \"help\" for available commands."
   echo
 }
 
@@ -151,12 +151,12 @@ print_help() {
 print_list() {
   echo "All available scripts:"
   echo
-  for script in $(printf '%s\n' "${!SCRIPTS[@]}" | sort); do
+  for script in "${!SCRIPTS[@]}"; do
     local script_info="${SCRIPTS[$script]}"
     local script_file="${script_info%%:*}"
     local description="${script_info##*:}"
     printf "%-12s (%s) - %s\n" "$script" "$script_file" "$description"
-  done
+  done | sort
   echo
 }
 
@@ -172,8 +172,8 @@ execute_script() {
     local script_path="$SCRIPT_DIR/$script_file"
     
     if [[ -x "$script_path" ]]; then
-      echo "🚀 Executing: $script_file ${args[*]}"
-      echo "$(printf '%0.s─' {1..60})"
+      echo "Executing: $script_file ${args[*]}"
+      echo "------------------------------------------------------------"
       
       # Execute the script with provided arguments
       if [[ ${#args[@]} -gt 0 ]]; then
@@ -183,27 +183,25 @@ execute_script() {
       fi
       
       local exit_code=$?
-      echo "$(printf '%0.s─' {1..60})"
+      echo "------------------------------------------------------------"
       
       if [[ $exit_code -eq 0 ]]; then
-        echo "✅ Command completed successfully"
+        echo "SUCCESS: Command completed successfully"
       else
-        echo "❌ Command failed with exit code: $exit_code"
+        echo "ERROR: Command failed with exit code: $exit_code"
       fi
       
       # Wait for user acknowledgment before returning to menu
       wait_for_user
       
     else
-      echo "❌ Script not found or not executable: $script_path"
+      echo "ERROR: Script not found or not executable: $script_path"
       wait_for_user
-      # Don't return 1, let the function continue to restart menu
     fi
   else
-    echo "❌ Command not found: $command"
-    echo "Type 'help' to see available commands"
+    echo "ERROR: Command not found: $command"
+    echo "Type \"help\" to see available commands"
     wait_for_user
-    # Don't return 1, let the function continue to restart menu
   fi
 }
 
