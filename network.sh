@@ -17,8 +17,8 @@ START_NET=""    # optional subnet override (e.g., 192.168.1.0/24)
 set_lang() {
   case "$LANG_CODE" in
     en)
-      MSG_USAGE="Usage:
-  network.sh [ -s | -e | -p ] <pattern_or_glob> [subnet] [--name \"glob\"] [--exclude \"glob\"]...
+      MSG_USAGE='Usage:
+  network.sh [ -s | -e | -p ] <pattern_or_glob> [subnet] [--name "glob"] [--exclude "glob"]...
 
 Detect who is on the same network and filter the results similarly to search.sh.
 
@@ -28,12 +28,12 @@ Modes:
   -p, --perl       Perl-compatible regex (-P), if supported
 
 Filters:
-  --name \"glob\"    Include only entries whose host/IP/MAC match the glob (repeatable)
-  --exclude \"glob\" Exclude entries whose host/IP/MAC match the glob (repeatable)
+  --name "glob"    Include only entries whose host/IP/MAC match the glob (repeatable)
+  --exclude "glob" Exclude entries whose host/IP/MAC match the glob (repeatable)
 
 Language:
   --en (default), --fr, --jp
-  -h, --help       Show this help."
+  -h, --help       Show this help.'
       MSG_FN_SEARCH="Hostname glob search for"
       MSG_CONTENT_SEARCH="Network scan"
       MSG_MODE_SIMPLE="simple"
